@@ -1,43 +1,48 @@
 import sys
 import random
+import math
 
-class Cell(pygame.sprite.Sprite):
+class Cell(object):
 
-  def __init__(self,resistance,moist,hunger,x,y):
-      super(Cell,self(),__init__())
+  def __init__(self,resistance,moist,hunger,x,y,survive):
+      #super(Cell,self(),__init__())
       self.resistance = resistance
       self.moist = moist
       self.hunger = hunger
-      self.survivability = 0.5
+      self.survivability = survive
       self.x = x
       self.y = y
+      self.counter = 0
+      self.time = 5
 
 
-  def live(self, envR, envM, envH, rad):
+  def live(self, envR, envM, envH, rad): #based off of RGB
       R = self.resistance - envR
       H = envH - self.hunger
       M = abs(envM - self.moist)
       if R <= 0:
-          return -1
+          cell.survivability = -1
 
       moisModif = 1
       hunModif = 1
 
       if H > 0:
-          return -M*moisModif - rad*2 + self.survivability
+          cell.survivability = -M*moisModif - rad*2 + self.survivability
 
-      return -M*moisModif + H*hunModif - rad*2 + self.survivability
+      cell.survivability= -M*moisModif + H*hunModif - rad*2 + self.survivability
 
   def spread(self,envH):
       time = 5
       H = envH - self.hunger
       int(time - H*5)
+      self.time = time
 
 "CHANGE THESE"
 width = 10
 height = 10
 radiation = 0
 stMutation = random.normalvariate(0,.05)
+radius = 10
 "CHANGE THESE"
 
 # Simulation settings
@@ -45,39 +50,54 @@ generations = 10
 num_cells = 10
 
 # Create the cells in the simulation
-cells = [Cell(0,0.5,1,width//2,height//2)]
-
+cells = [Cell(0,0.5,1,width//2,height//2,0.5)]
 
 def get_cell_mutation():
-  return (stMutation*2*radiation + stMutation,
-          stMutation*2*radiation + stMutation,
-          stMutation*2*radiation + stMutation)
+    return (stMutation*2*radiation + stMutation,
+            stMutation*2*radiation + stMutation,
+            stMutation*2*radiation + stMutation)
 
+def alterCells():
+    mutated = []
+    for cell in cells:
+        mutated.append(Cell(get_cell_mutation,cell.x,cell.y,cell.survivability))
 
-  # Life!
-  for cell in cells:
-    cell.live(environment_modifier)
+    for cell in mutated:
+        R,G,B = 'GetRGB(image)'
+        cell.live(R,G,B,radiation)
+        if cell.survivability > 0:
+            cell.spread()
+            survived.append(cell)
+    cells = survived
 
-  # Death!
-  # Survivability < 0 will die
-  survived_cells = []
-  for cell in cells:
-    if cell.survivability > 0:
-      survived_cells.append(cell)
+def movePossible(x,y):
+    randomStart = random.randint(0,360)
+    for i in range(randomStart,randomStart+360,10):
+        radians = i*math.pi/180
+        newX = radius*2*math.cos(radians) + x
+        newY = radius*2*math.sin(radians) + y
+        collide = False
+        for cell in cells:
+            if ((newX-cell.x)**2 + (newY - cell.y)**2)**0.5 < 2*radius:
+                collide = True
+                break
+        if collide == False:
+            return newX,newY
 
-  if len(survived_cells) == 0:
-    print("\n\033[91mAll cells died in generation " + str(i) + "\033[0m")
-    sys.exit()
+    return False
 
-  # Intermediate results
-  cells = sorted(cells, key=lambda cell: cell.survivability)
-  print("Cells that survived this gen: " + str(len(survived_cells)) + "\n")
-
-  # Reproduction: each surviving cell will split into two new cells,
-  # each with the parent's fitness + a random mutation value
-  cells = []
-  for survived in survived_cells:
-    cells.append(Cell(cell.fitness + get_cell_mutation()))
-    cells.append(Cell(cell.fitness + get_cell_mutation()))
-
-print("\033[92mSuccess\033[0m")
+def newCells():
+    for cell in cells:
+        cell.counter += 1
+        if cell.counter == cell.time:
+            cell.counter = 0
+            if movePossible(cell.x,cell.y) == False:
+                continue
+            else:
+                newX, newY = movePossible(cell.x,cell.y)
+            new = Cell(get_cell_mutation,newX,newY,cell.survivability)
+            R,G,B = 'GetRGB(image)'
+            new.live(R,G,B,radiation)
+            if new.survivability > 0:
+                new.spread()
+                cells.append(new)
