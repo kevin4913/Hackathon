@@ -1,0 +1,32 @@
+from random import random
+
+class Cell:
+
+  def __init__(self,resistance,moist,hunger,x,y):
+      self.resistance = resistance
+      self.moist = moist
+      self.hunger = hunger
+      self.survivability = 0.5
+      self.x = x
+      self.y = y
+
+
+  def live(self, envR, envM, envH, rad):
+      R = self.resistance - envR
+      H = envH - self.hunger
+      M = abs(envM - self.moist)
+      if R <= 0:
+          return -1
+
+      moisModif = 1
+      hunModif = 1
+
+      if H > 0:
+          return -M*moisModif - rad*2 + self.survivability
+
+      return -M*moisModif + H*hunModif - rad*2 + self.survivability
+
+  def spread(self,envH):
+      time = 5
+      H = envH - self.hunger
+      int(time - H*5)
